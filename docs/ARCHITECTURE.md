@@ -174,6 +174,91 @@ Add `@CrossOrigin(origins = "http://localhost:5173")` to controller.
 
 ---
 
+### ADR-007: Separate AI Service Layer
+
+**Date:** 2024-12-24  
+**Status:** Accepted
+
+**Context:**  
+Need to integrate AI cleaning via Ollama. Could put AI logic directly in NoteService or create a separate service.
+
+**Decision:**  
+Create a separate `AiCleaningService` that `NoteService` calls.
+
+**Reasoning:**
+1. **Single Responsibility** - NoteService orchestrates the flow, AiCleaningService handles AI communication
+2. **Testability** - Can mock AiCleaningService for fast unit tests of NoteService
+3. **Swappability** - Could swap Ollama for OpenAI later without touching NoteService
+4. **Error Isolation** - AI-specific errors handled in one place
+
+**Consequences:**
+- Extra class to maintain
+- Clear separation of concerns
+- Easier to add fallback providers later
+
+---
+
+### ADR-008: AI Error Handling Strategy
+
+**Date:** 2024-12-24  
+**Status:** Accepted
+
+**Context:**  
+Need to decide what happens when AI service fails (Ollama down, timeout, bad response).
+
+**Decision:**  
+Return HTTP error codes, do NOT fall back to original content silently.
+
+**Reasoning:**
+1. **Explicit failure** - User knows something went wrong
+2. **No false success** - Don't pretend cleaning happened when it didn't
+3. **Debuggability** - Clear error messages help troubleshooting
+4. **User choice** - User can retry or use content as-is
+
+**Error Mapping:**
+- Ollama not running → 503 Service Unavailable
+- Request timeout → 504 Gateway Timeout
+- Other AI errors → 500 Internal Server Error
+
+**Consequences:**
+- User must handle errors
+- No degraded experience (either works or fails)
+- Clear contract with frontend
+
+---
+
+### ADR-009: Prompt Engineering Strategy
+
+**Date:** 2024-12-24  
+**Status:** Accepted
+
+**Context:**  
+Need to instruct the AI on how to clean notes and format output.
+
+**Decision:**  
+Use a structured system prompt with clear instructions and format-specific guidance.
+
+**Prompt Structure:**
+1. Role definition (you are a note cleaning assistant)
+2. Task definition (clean, structure, format)
+3. Constraints (preserve meaning, no explanations)
+4. Format-specific instructions (bullets/paragraphs/numbered)
+5. Output requirement (return ONLY the cleaned content)
+
+**Reasoning:**
+1. **Consistency** - Same cleaning quality across requests
+2. **Control** - Explicit instructions reduce AI hallucination
+3. **Format compliance** - Clear format rules ensure usable output
+
+**Consequences:**
+- Prompt may need tuning based on results
+- Model-specific adjustments might be needed
+- Easy to iterate on prompt without code changes
+
+---
+
+---
+
 ## Future Decisions (To Be Made)
 
 ### Pending: AI Provider Abstraction
