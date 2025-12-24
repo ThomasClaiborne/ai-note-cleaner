@@ -8,6 +8,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -41,6 +43,35 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handles AI service failures.
+     * Returns appropriate status based on the underlying cause:
+     * - 503 Service Unavailable: Ollama not running (connection refused)
+     * - 504 Gateway Timeout: AI request timed out
+     * - 500 Internal Server Error: Other AI failures
+     */
+    @ExceptionHandler(AiServiceException.class)
+    public ResponseEntity<ErrorResponse> handleAiServiceException(AiServiceException ex) {
+        HttpStatus status;
+        String message;
+
+        Throwable cause = findRootCause(ex);
+
+        if (cause instanceof ConnectException) {
+            status = HttpStatus.SERVICE_UNAVAILABLE;
+            message = "AI service is unavailable. Please ensure Ollama is running.";
+        } else if (cause instanceof SocketTimeoutException) {
+            status = HttpStatus.GATEWAY_TIMEOUT;
+            message = "AI service request timed out. Please try again.";
+        } else {
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+            message = "An error occurred while processing your request.";
+        }
+
+        ErrorResponse response = new ErrorResponse(message, null, LocalDateTime.now());
+        return ResponseEntity.status(status).body(response);
+    }
+
+    /**
      * Handles all other unexpected exceptions.
      * Returns 500 Internal Server Error with generic message.
      */
@@ -53,5 +84,16 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+
+    /**
+     * Traverses the exception chain to find the root cause.
+     */
+    private Throwable findRootCause(Throwable throwable) {
+        Throwable cause = throwable;
+        while (cause.getCause() != null && cause.getCause() != cause) {
+            cause = cause.getCause();
+        }
+        return cause;
     }
 }

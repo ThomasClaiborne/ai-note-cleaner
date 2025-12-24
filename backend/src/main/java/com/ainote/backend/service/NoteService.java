@@ -8,11 +8,16 @@ import java.time.LocalDateTime;
 
 /**
  * Service for processing and cleaning notes.
- * Phase 1: Placeholder logic that echoes input with format prefix.
- * Phase 2: Will integrate with AI for actual cleaning.
+ * Delegates to AiCleaningService for AI-powered content transformation.
  */
 @Service
 public class NoteService {
+
+    private final AiCleaningService aiCleaningService;
+
+    public NoteService(AiCleaningService aiCleaningService) {
+        this.aiCleaningService = aiCleaningService;
+    }
 
     /**
      * Cleans the provided note content and formats it according to the requested output format.
@@ -24,18 +29,8 @@ public class NoteService {
         String original = request.getContent();
         String outputFormat = request.getOutputFormat();
 
-        // Phase 1: Placeholder logic - prefix with format indicator
-        // Phase 2: This will call AI service for actual cleaning
-        String cleaned = formatPlaceholder(original, outputFormat);
+        String cleaned = aiCleaningService.cleanContent(original, outputFormat);
 
         return new CleanResponse(original, cleaned, outputFormat, LocalDateTime.now());
-    }
-
-    /**
-     * Placeholder formatting logic for Phase 1.
-     * Simply prefixes the content with the format type.
-     */
-    private String formatPlaceholder(String content, String format) {
-        return "[" + format.toUpperCase() + "] " + content;
     }
 }
