@@ -20,6 +20,8 @@ For detailed architecture decisions and design documentation, see [docs/ARCHITEC
 ### Backend
 - Java 21
 - Spring Boot 3.4.12
+- Spring AI 1.0.0-M4
+- Ollama (local LLM runtime)
 - Spring Data JPA
 - H2 Database (development)
 - Maven
@@ -38,6 +40,29 @@ For detailed architecture decisions and design documentation, see [docs/ARCHITEC
 - Java 21 or higher
 - Node.js 18 or higher
 - npm or yarn
+- Ollama (for AI features)
+
+### Ollama Setup
+
+The application uses Ollama for AI-powered note cleaning. You'll need to install and configure it:
+
+1. **Install Ollama** from [ollama.ai](https://ollama.ai)
+
+2. **Pull the required model**:
+   ```bash
+   ollama pull llama3.2
+   ```
+
+3. **Start Ollama** (if not running as a service):
+   ```bash
+   ollama serve
+   ```
+
+4. **Verify Ollama is running**:
+   ```bash
+   curl http://localhost:11434
+   # Should return: "Ollama is running"
+   ```
 
 ### Backend Setup
 
@@ -57,6 +82,8 @@ For detailed architecture decisions and design documentation, see [docs/ARCHITEC
    ```
 
 The backend will start on `http://localhost:8080`
+
+> **Note**: The backend requires Ollama to be running for AI features. If Ollama is unavailable, the API will return a 503 Service Unavailable error.
 
 ### Frontend Setup
 

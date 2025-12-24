@@ -116,6 +116,97 @@ curl -X POST http://localhost:8080/api/notes/clean \
 
 ---
 
+### 2024-12-24 - Phase 2: AI Integration with Spring AI + Ollama
+
+**Duration:** ~2 hours  
+**Phase:** 2 - AI Integration
+
+**What I Did:**
+- Added Spring AI BOM and Ollama starter dependencies to pom.xml
+- Configured Ollama connection in application.properties (localhost:11434, llama3.2 model)
+- Created AiServiceException for wrapping AI communication failures
+- Created AiCleaningService with prompt engineering for note cleaning
+- Updated NoteService to delegate to AiCleaningService (replaced placeholder logic)
+- Added AI error handling to GlobalExceptionHandler (503/504/500 responses)
+- Updated NoteServiceTest with mocked AiCleaningService
+- Created AiCleaningServiceTest integration tests (gracefully skip if Ollama unavailable)
+- Updated README with Ollama setup instructions
+
+**Commits Made:**
+- `feat: integrate Spring AI with Ollama for note cleaning`
+
+**Key Learnings:**
+- Spring AI BOM manages versions for all Spring AI dependencies - no need to specify versions individually
+- Spring AI 1.0.0-M4 is a milestone release, requires Spring Milestones repository
+- `OllamaChatModel.call(prompt)` is the simplest API for string-in/string-out AI calls
+- Low temperature (0.3) produces more consistent, deterministic outputs for note cleaning
+- Exception chains need traversal to find root cause (e.g., ConnectException wrapped multiple times)
+- Integration tests can gracefully skip when external services unavailable using try-catch pattern
+
+**Code I Want to Remember:**
+```java
+// Simple AI call with Spring AI
+@Service
+public class AiCleaningService {
+    private final OllamaChatModel chatModel;
+    
+    public String cleanContent(String content, String outputFormat) {
+        String prompt = buildPrompt(content, outputFormat);
+        try {
+            return chatModel.call(prompt);
+        } catch (Exception e) {
+            throw new AiServiceException("Failed to communicate with AI service", e);
+        }
+    }
+}
+
+// Finding root cause in exception chain
+private Throwable findRootCause(Throwable throwable) {
+    Throwable cause = throwable;
+    while (cause.getCause() != null && cause.getCause() != cause) {
+        cause = cause.getCause();
+    }
+    return cause;
+}
+```
+
+**Prompt Template Used:**
+```
+You are a note cleaning assistant. Your task is to clean and improve the following notes.
+
+Instructions:
+1. Fix all spelling and grammar errors
+2. Improve clarity and remove redundant content
+3. Organize the content logically
+4. Format the output as {FORMAT_INSTRUCTION}
+5. Preserve the original meaning - do not add new information
+6. Return ONLY the cleaned content with no explanations, preambles, or commentary
+
+Notes to clean:
+{CONTENT}
+
+Cleaned notes:
+```
+
+**API Tested Successfully:**
+```bash
+curl -X POST http://localhost:8080/api/notes/clean \
+  -H "Content-Type: application/json" \
+  -d '{"content": "hte quikc brown fox jumps ovr the lazy dog. very fast. much speed.", "outputFormat": "bullets"}'
+
+# Response:
+# {"original":"hte quikc brown fox...","cleaned":"• The quick brown fox jumps over the lazy dog.\n• It is known for...","outputFormat":"bullets","timestamp":"..."}
+```
+
+**Problems Encountered:**
+- AI sometimes adds extra information despite prompt instructions (e.g., added trivia about the pangram)
+- Solution: Could refine prompt further, but acceptable for MVP
+
+**Next Session:**
+- Phase 3: Frontend Integration (React UI to call the API)
+
+---
+
 ### Template for Future Entries
 
 ```markdown
@@ -219,6 +310,7 @@ Track if you're curious about your development patterns:
 |------|-------|-------------|---------------|------------|---------|
 | 2024-12-23 | 2 | 0 | 0 | 5 | 0 |
 | 2024-12-23 | 3 | ~400 | 18 | ~15 | 5 |
+| 2024-12-24 | 2 | ~350 | 10 | ~10 | 1 |
 
 ---
 
