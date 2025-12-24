@@ -59,6 +59,63 @@ This becomes interview material and helps you remember your thought process.
 
 ---
 
+### 2024-12-23 - Phase 1: Backend API Foundation
+
+**Duration:** ~3 hours  
+**Phase:** 1 - Backend API Foundation
+
+**What I Did:**
+- Created CleanRequest, CleanResponse, ErrorResponse DTOs with validation
+- Built NoteService with placeholder cleaning logic
+- Implemented NoteController REST endpoint (POST /api/notes/clean)
+- Added GlobalExceptionHandler for validation errors
+- Wrote 18 tests (9 unit, 9 integration) - all passing
+- Updated README with docs folder structure
+
+**Commits Made:**
+- `feat: add request/response DTOs with validation`
+- `feat: add NoteService with placeholder cleaning logic`
+- `feat: add REST endpoint and exception handling`
+- `test: add NoteService and NoteController tests`
+- `docs: update README with docs folder structure`
+
+**Key Learnings:**
+- `@NotBlank` vs `@NotNull` - NotBlank also rejects whitespace-only strings
+- `@Pattern` uses regex to validate specific string values (e.g., `bullets|paragraphs|numbered`)
+- Constructor injection preferred over `@Autowired` on fields (better testability, immutability)
+- `@WebMvcTest` loads only web layer (faster than `@SpringBootTest` for controller tests)
+- `MockMvc` simulates HTTP requests without starting a real server
+- JSONPath syntax for testing: `$.field`, `$.array[0].property`
+
+**Code I Want to Remember:**
+```java
+// Validation annotations on DTO
+@NotBlank(message = "Content is required")
+private String content;
+
+@Pattern(regexp = "bullets|paragraphs|numbered", message = "Invalid output format")
+private String outputFormat;
+
+// Controller test with MockMvc
+mockMvc.perform(post("/api/notes/clean")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request)))
+    .andExpect(status().isOk())
+    .andExpect(jsonPath("$.cleaned").exists());
+```
+
+**API Tested Successfully:**
+```bash
+curl -X POST http://localhost:8080/api/notes/clean \
+  -H "Content-Type: application/json" \
+  -d '{"content": "Test content.", "outputFormat": "bullets"}'
+```
+
+**Next Session:**
+- Phase 2: AI Integration with Spring AI + Ollama
+
+---
+
 ### Template for Future Entries
 
 ```markdown
@@ -161,6 +218,7 @@ Track if you're curious about your development patterns:
 | Date | Hours | Lines Added | Tests Written | AI Prompts | Commits |
 |------|-------|-------------|---------------|------------|---------|
 | 2024-12-23 | 2 | 0 | 0 | 5 | 0 |
+| 2024-12-23 | 3 | ~400 | 18 | ~15 | 5 |
 
 ---
 
