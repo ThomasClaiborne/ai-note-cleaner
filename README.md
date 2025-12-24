@@ -4,7 +4,7 @@ An intelligent note cleaning application that helps users organize and improve t
 
 ## Overview
 
-AI Note Cleaner is a full-stack web application designed to help users clean up, organize, and enhance their notes automatically. The application leverages artificial intelligence to improve note quality, structure, and readability.
+AI Note Cleaner is a full-stack web application designed to help you clean up, organize, and enhance your notes automatically. The application leverages artificial intelligence to improve note quality, structure, and readability.
 
 ## Architecture
 
@@ -12,6 +12,8 @@ This project consists of two main components:
 
 - **Backend**: Spring Boot application with REST API ([backend/](./backend/))
 - **Frontend**: React + TypeScript application with Vite ([frontend/](./frontend/))
+
+For detailed architecture decisions and design documentation, see [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md).
 
 ## Technology Stack
 
@@ -108,7 +110,7 @@ The frontend is built with modern React and includes:
 
 ## Project Structure
 
-```
+```text
 ai-note-cleaner/
 ├── backend/                 # Spring Boot backend
 │   ├── src/
@@ -121,7 +123,11 @@ ai-note-cleaner/
 │   ├── public/
 │   ├── package.json
 │   └── vite.config.ts
-└── README.md               # This file
+├── docs/                    # Documentation
+│   ├── ARCHITECTURE.md
+│   ├── DEV_LOG.md
+│   └── INSTRUCTIONS.md
+└── README.md                # This file
 ```
 
 ## Contributing
