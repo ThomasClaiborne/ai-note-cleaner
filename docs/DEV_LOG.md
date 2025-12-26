@@ -207,49 +207,135 @@ curl -X POST http://localhost:8080/api/notes/clean \
 
 ---
 
-### Template for Future Entries
+### 2024-12-24 - Phase 3: React Frontend
 
-```markdown
-### YYYY-MM-DD - [Session Title]
-
-**Duration:** X hours  
-**Phase:** [1/2/3/4]
+**Duration:** ~3 hours  
+**Phase:** 3 - React Frontend
 
 **What I Did:**
-- 
+- Created TypeScript interfaces matching backend DTOs (types/index.ts)
+- Built API service with custom ApiError class (services/api.ts)
+- Created LoadingSpinner component with accessibility features
+- Created ErrorMessage component with field-level error display
+- Created FormatSelector component (radio buttons for output format)
+- Created NoteInput component with character count and limit warnings
+- Created NoteOutput component with copy-to-clipboard functionality
+- Replaced App.tsx with full application orchestration
+- Deleted unused App.css (all styling via Tailwind)
+- Added CORS configuration to backend NoteController
 
 **Commits Made:**
-- `type: description` - [link if applicable]
+- `feat: add TypeScript types and API service`
+- `feat: add LoadingSpinner and ErrorMessage components`
+- `feat: add FormatSelector and NoteInput components`
+- `feat: add NoteOutput component with copy functionality`
+- `feat: implement main App with full workflow`
+- `chore: add Phase 3 instructions and update package-lock.json`
+- `fix: add CORS support for frontend development`
 
 **Problems Encountered:**
-- Problem:
-- Solution:
-- Time spent:
 
-**AI Prompts That Worked:**
-```
-[paste effective prompts here]
-```
+1. **TypeScript errors in components**
+   - Problem: `react/jsx-runtime` module not found, `JSX.IntrinsicElements` missing
+   - Cause: `npm install` hadn't been run - node_modules didn't exist
+   - Solution: Run `npm install` in frontend directory
+   - Time spent: ~5 minutes
 
-**AI Prompts That Didn't Work:**
-```
-[paste ineffective prompts and why]
-```
+2. **CORS error when frontend called backend**
+   - Problem: `Access to fetch blocked by CORS policy: No 'Access-Control-Allow-Origin' header`
+   - Cause: Frontend (port 5173) and backend (port 8080) are different origins
+   - Solution: Added `@CrossOrigin(origins = "http://localhost:5173")` to NoteController
+   - Time spent: ~10 minutes
+   - Lesson: Always consider CORS when frontend and backend run on different ports
 
-**What I Learned:**
-- 
+**Key Learnings:**
+
+- **TypeScript interfaces should mirror backend DTOs exactly** - Prevents type mismatches at runtime
+- **Custom error classes are powerful** - `ApiError` carries statusCode and details for smart error handling
+- **Controlled components in React** - Parent owns state, child receives value + onChange callback
+- **Tailwind utility classes** - No separate CSS files needed, styles co-located with components
+- **Clipboard API is async** - `navigator.clipboard.writeText()` returns a Promise
+- **CORS is origin-based** - Different ports = different origins, even on localhost
 
 **Code I Want to Remember:**
-```java
-// paste notable code snippets
+
+```typescript
+// Custom error class with API details
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public statusCode: number,
+    public details: ErrorResponse | null = null
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+// Controlled input pattern
+interface NoteInputProps {
+  value: string;
+  onChange: (content: string) => void;
+  disabled?: boolean;
+}
+
+// Copy to clipboard with feedback
+const handleCopy = async () => {
+  try {
+    await navigator.clipboard.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  } catch (err) {
+    console.error('Failed to copy:', err);
+  }
+};
+
+// Character limit with visual warnings
+const isNearLimit = characterCount >= maxLength * 0.9;
+const isAtLimit = characterCount >= maxLength;
 ```
 
-**Questions for Later:**
-- 
+**Frontend Structure Created:**
+```
+frontend/src/
+├── types/
+│   └── index.ts           # CleanRequest, CleanResponse, ErrorResponse, etc.
+├── services/
+│   └── api.ts             # cleanNote() function, ApiError class
+├── components/
+│   ├── LoadingSpinner.tsx # Accessible loading indicator
+│   ├── ErrorMessage.tsx   # Error display with field details
+│   ├── FormatSelector.tsx # Radio buttons for output format
+│   ├── NoteInput.tsx      # Textarea with character count
+│   └── NoteOutput.tsx     # Result display with copy button
+└── App.tsx                # Main orchestration, state management
+```
+
+**Testing the Full Stack (PowerShell):**
+```powershell
+# Terminal 1: Ollama (if not running as service)
+ollama serve
+
+# Terminal 2: Backend
+cd backend
+.\mvnw spring-boot:run
+
+# Terminal 3: Frontend
+cd frontend
+npm run dev
+
+# Open browser to http://localhost:5173
+```
+
+**What I Learned About AI-Native Workflow:**
+- OpenHands works file-by-file; need to specify commit points
+- Always run `npm install` before expecting TypeScript to work
+- CORS issues are predictable - should add to INSTRUCTIONS.md upfront
+- AI tools sometimes skip ahead - need to enforce "one file at a time" rule
 
 **Next Session:**
-- 
-```
+- Phase 4: Database Persistence (optional)
+- Or: Polish, testing, deployment preparation
 
 ---
 
@@ -257,33 +343,41 @@ curl -X POST http://localhost:8080/api/notes/clean \
 
 ### Useful Commands
 
-```bash
-# Backend
+```powershell
+# Backend (PowerShell)
 cd backend
-./mvnw spring-boot:run          # Start server
-./mvnw test                      # Run tests
-./mvnw clean package             # Build JAR
+.\mvnw spring-boot:run          # Start server
+.\mvnw test                      # Run tests
+.\mvnw clean package             # Build JAR
 
-# Frontend
+# Frontend (PowerShell)
 cd frontend
 npm run dev                      # Start dev server
 npm run build                    # Production build
 npm run lint                     # Check code quality
 
-# Testing API
-curl -X POST http://localhost:8080/api/notes/clean \
-  -H "Content-Type: application/json" \
-  -d '{"content": "Test content.", "outputFormat": "bullets"}'
+# Ollama
+ollama serve                     # Start Ollama server
+ollama run llama3.2              # Interactive mode with model
+
+# Testing API (PowerShell)
+Invoke-RestMethod -Uri "http://localhost:8080/api/notes/clean" `
+  -Method POST `
+  -ContentType "application/json" `
+  -Body '{"content": "Test content.", "outputFormat": "bullets"}'
 
 # Git
 git status
 git add .
 git commit -m "type: description"
-git push origin main
+git push origin branch-name
 ```
 
 ### Things I Keep Forgetting
 
+- [x] Use `.\` not `./` for running scripts in PowerShell
+- [x] Run `npm install` before expecting TypeScript to work
+- [x] CORS needs configuration when frontend/backend on different ports
 - [ ] (Add items here as you encounter them)
 
 ### Interview Talking Points
@@ -291,26 +385,29 @@ git push origin main
 Build this list as you develop - specific examples for behavioral interviews:
 
 **Technical Decisions:**
-- "I chose backend-first because..."
+- "I chose backend-first because the frontend depends on the API contract, not vice versa"
+- "I used useState over Redux because the app only has 5 pieces of state, all in one component"
+- "I chose native fetch over axios because Dev10 teaches fetch and we only have one endpoint"
 
 **Problem Solving:**
-- (Add as you solve problems)
+- "When I got TypeScript errors about missing jsx-runtime, I realized node_modules wasn't installed"
+- "The CORS error taught me that different ports are different origins to the browser"
 
 **AI-Native Workflow:**
-- "I structured my prompts by..."
-- "When the AI gave me code I didn't understand, I..."
+- "I structured my prompts with clear file specs and expected behavior"
+- "When OpenHands generated code, I reviewed every file before approving"
+- "I learned to specify commit points since the AI works one file at a time"
 
 ---
 
-## Metrics (Optional)
+## Metrics
 
-Track if you're curious about your development patterns:
-
-| Date | Hours | Lines Added | Tests Written | AI Prompts | Commits |
-|------|-------|-------------|---------------|------------|---------|
-| 2024-12-23 | 2 | 0 | 0 | 5 | 0 |
-| 2024-12-23 | 3 | ~400 | 18 | ~15 | 5 |
-| 2024-12-24 | 2 | ~350 | 10 | ~10 | 1 |
+| Date | Hours | Files Created | Tests Written | Commits |
+|------|-------|---------------|---------------|---------|
+| 2024-12-23 | 2 | 0 | 0 | 0 |
+| 2024-12-23 | 3 | 6 | 18 | 5 |
+| 2024-12-24 | 2 | 2 | 10 | 1 |
+| 2024-12-24 | 3 | 8 | 0 | 7 |
 
 ---
 

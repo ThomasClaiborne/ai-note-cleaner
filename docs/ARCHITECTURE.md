@@ -257,21 +257,276 @@ Use a structured system prompt with clear instructions and format-specific guida
 
 ---
 
+### ADR-010: React State Management with useState
+
+**Date:** 2024-12-24  
+**Status:** Accepted
+
+**Context:**  
+Need to manage application state in React frontend. Options: useState, useReducer, or external library (Zustand, Redux).
+
+**Decision:**  
+Use React's built-in `useState` hooks for all state management.
+
+**Reasoning:**
+1. **Simple state shape** - Only 5 pieces of state: content, outputFormat, result, isLoading, error
+2. **No cross-component sharing** - All state lives in App.tsx, passed down as props
+3. **No async complexity** - Single API call, no caching needed
+4. **Dev10 alignment** - Teaches React hooks, not external libraries
+5. **YAGNI** - Don't add complexity until we need it
+
+**State Shape:**
+```typescript
+const [content, setContent] = useState('');
+const [outputFormat, setOutputFormat] = useState<OutputFormat>('bullets');
+const [result, setResult] = useState<CleanResponse | null>(null);
+const [isLoading, setIsLoading] = useState(false);
+const [error, setError] = useState<ErrorState | null>(null);
+```
+
+**Consequences:**
+- All state in one component (App.tsx)
+- Props drilling for 1 level (acceptable for small app)
+- Easy to understand and debug
+- Could refactor to useReducer if state logic gets complex
+
+---
+
+### ADR-011: Flat Component Structure
+
+**Date:** 2024-12-24  
+**Status:** Accepted
+
+**Context:**  
+Need to organize React components. Options: flat `components/` folder, feature folders, or atomic design.
+
+**Decision:**  
+Use a flat `components/` folder with all components at the same level.
+
+**Reasoning:**
+1. **Small number of components** - Only 5 components, no nesting needed
+2. **No shared sub-components** - Each component is self-contained
+3. **Easy to find files** - All in one place
+4. **Matches project scale** - Feature folders overkill for MVP
+
+**Structure:**
+```
+src/
+├── components/
+│   ├── NoteInput.tsx
+│   ├── FormatSelector.tsx
+│   ├── NoteOutput.tsx
+│   ├── LoadingSpinner.tsx
+│   └── ErrorMessage.tsx
+├── services/
+│   └── api.ts
+├── types/
+│   └── index.ts
+└── App.tsx
+```
+
+**Consequences:**
+- Simple mental model
+- May need reorganization if app grows significantly
+- No component hierarchy complexity
+
+---
+
+### ADR-012: Plain Fetch for API Communication
+
+**Date:** 2024-12-24  
+**Status:** Accepted
+
+**Context:**  
+Need to make HTTP requests to backend API. Options: native fetch, axios, TanStack Query (React Query).
+
+**Decision:**  
+Use native `fetch` API with a simple wrapper function in `services/api.ts`.
+
+**Reasoning:**
+1. **Dev10 teaches fetch** - Matches curriculum, reinforces learning
+2. **No caching needed** - Each request is independent, no query invalidation
+3. **One API endpoint** - POST /api/notes/clean, no complex data fetching
+4. **Browser native** - No additional dependency
+5. **TypeScript friendly** - Easy to type response handling
+
+**Implementation:**
+```typescript
+export async function cleanNote(request: CleanRequest): Promise<CleanResponse> {
+  const response = await fetch(`${API_BASE_URL}/notes/clean`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new ApiError(error.message, response.status, error);
+  }
+  
+  return response.json();
+}
+```
+
+**Alternatives Considered:**
+- **axios** - More features than needed, extra dependency
+- **TanStack Query** - Excellent for complex apps, overkill here
+
+**Consequences:**
+- Manual error handling required
+- No automatic retries (acceptable for MVP)
+- Easy to swap to axios/TanStack Query later if needed
+
+---
+
+### ADR-013: Tailwind CSS Utility Classes Only
+
+**Date:** 2024-12-24  
+**Status:** Accepted
+
+**Context:**  
+Tailwind CSS is configured. Need to decide how to apply styles: utility classes inline, @apply in CSS, or mixed approach.
+
+**Decision:**  
+Use Tailwind utility classes directly in JSX. No custom CSS classes, no @apply directives.
+
+**Reasoning:**
+1. **Rapid development** - No context switching to CSS files
+2. **Co-location** - Styles live with the component using them
+3. **Consistency** - Tailwind's design system ensures visual consistency
+4. **No dead CSS** - Only used classes are included in build
+5. **Easy to modify** - Change styles without hunting through CSS files
+
+**Example:**
+```tsx
+<button 
+  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg 
+             disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+>
+  Clean Notes
+</button>
+```
+
+**Consequences:**
+- Longer className strings (acceptable tradeoff)
+- Some repetition across components (extract to components, not CSS)
+- Delete App.css (not needed)
+
+---
+
+### ADR-014: Controlled Form Inputs
+
+**Date:** 2024-12-24  
+**Status:** Accepted
+
+**Context:**  
+Need to handle form inputs (textarea, radio buttons). Options: controlled components (React state), uncontrolled (refs), or form library.
+
+**Decision:**  
+Use controlled components with React state for all inputs.
+
+**Reasoning:**
+1. **React idiom** - Standard React pattern, taught in Dev10
+2. **Simple form** - Only 2 inputs (textarea, format selector)
+3. **Immediate validation** - Can validate as user types
+4. **No library needed** - React Hook Form overkill for 2 fields
+5. **State visibility** - Always know current form values
+
+**Pattern:**
+```tsx
+// In App.tsx
+const [content, setContent] = useState('');
+
+// Passed to component
+<NoteInput 
+  value={content} 
+  onChange={(value) => setContent(value)} 
+/>
+```
+
+**Consequences:**
+- Re-renders on every keystroke (acceptable for small form)
+- Clear data flow
+- Easy to reset form after submission
+
+---
+
+### ADR-015: Error Handling Strategy (Frontend)
+
+**Date:** 2024-12-24  
+**Status:** Accepted
+
+**Context:**  
+Need to handle and display errors from API. Types: validation errors (400), server errors (500), AI unavailable (503).
+
+**Decision:**  
+Create custom `ApiError` class and display errors inline with `ErrorMessage` component.
+
+**Reasoning:**
+1. **User-friendly messages** - Transform technical errors to readable messages
+2. **Field-level display** - Show validation errors next to relevant fields (or grouped)
+3. **Dismissable** - User can close error and retry
+4. **Type safety** - ApiError class carries status code and details
+
+**Error Flow:**
+```
+API Error → ApiError thrown → Caught in App.tsx → Set error state → ErrorMessage renders
+```
+
+**Error Display Rules:**
+- 400 (Validation): Show field-level messages from `details` array
+- 503 (AI Unavailable): "AI service is unavailable. Please ensure Ollama is running."
+- 504 (Timeout): "Request timed out. Please try again."
+- 500 (Server Error): "Something went wrong. Please try again."
+
+**Consequences:**
+- Consistent error display across app
+- User knows what went wrong and can retry
+- No silent failures
+
+---
+
+### ADR-016: Component Props Interface Pattern
+
+**Date:** 2024-12-24  
+**Status:** Accepted
+
+**Context:**  
+Need a consistent pattern for defining component props in TypeScript.
+
+**Decision:**  
+Define props as interfaces named `[ComponentName]Props`, exported from the component file.
+
+**Reasoning:**
+1. **Consistency** - Same pattern for all components
+2. **Co-location** - Props defined where used
+3. **Self-documenting** - Clear contract for component usage
+4. **IDE support** - TypeScript autocomplete for props
+
+**Pattern:**
+```tsx
+// NoteInput.tsx
+interface NoteInputProps {
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  placeholder?: string;
+  maxLength?: number;
+}
+
+export function NoteInput({ value, onChange, disabled = false, ...rest }: NoteInputProps) {
+  // ...
+}
+```
+
+**Consequences:**
+- Verbose but clear
+- Good TypeScript integration
+- Easy to see required vs optional props
+
 ---
 
 ## Future Decisions (To Be Made)
-
-### Pending: AI Provider Abstraction
-
-**Question:** Should we create an interface for AI providers to allow swapping Ollama/OpenAI?
-
-**Options:**
-1. Direct Ollama integration (simpler)
-2. Interface + Strategy pattern (more flexible)
-
-**Decide in:** Phase 2
-
----
 
 ### Pending: Database Choice for Production
 
@@ -282,19 +537,6 @@ Use a structured system prompt with clear instructions and format-specific guida
 2. PostgreSQL for production-readiness
 
 **Decide in:** Phase 4
-
----
-
-### Pending: State Management in Frontend
-
-**Question:** useState vs useReducer vs external library?
-
-**Options:**
-1. useState (simple, sufficient for small state)
-2. useReducer (if state logic gets complex)
-3. Zustand/Jotai (if we need global state)
-
-**Decide in:** Phase 3
 
 ---
 
@@ -350,4 +592,4 @@ Use a structured system prompt with clear instructions and format-specific guida
 
 ---
 
-*Last Updated: 2024-12-23*
+*Last Updated: 2024-12-24*
