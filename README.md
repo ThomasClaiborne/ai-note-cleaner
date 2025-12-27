@@ -1,271 +1,259 @@
 # AI Note Cleaner
 
-An intelligent note cleaning application that helps users organize and improve their notes using AI technology.
+A full-stack web application that transforms messy notes into clean, organized text using AI.
 
-## Overview
+![AI Note Cleaner Demo](docs/demo.gif)
 
-AI Note Cleaner is a full-stack web application designed to help you clean up, organize, and enhance your notes automatically. The application leverages artificial intelligence to improve note quality, structure, and readability.
+## Features
 
-**Features:**
-- Transform messy notes into clean, structured text
-- Choose output format: bullet points, paragraphs, or numbered lists
-- AI-powered spelling, grammar, and clarity improvements
-- Copy cleaned notes to clipboard with one click
+- **AI-Powered Cleaning** - Uses Ollama (Llama 3.2) to intelligently fix spelling, grammar, and clarity
+- **Multiple Output Formats** - Bullets, paragraphs, or numbered lists
+- **Note History** - View and revisit past transformations with expand/collapse
+- **Copy to Clipboard** - One-click copying of cleaned notes
+- **Real-time Validation** - Character limits and input validation
+- **Responsive Design** - Works on desktop and mobile
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | React 18, TypeScript, Tailwind CSS, Vite |
+| Backend | Spring Boot 3.4, Spring AI, Java 21 |
+| Database | H2 (dev), PostgreSQL (prod-ready) |
+| AI | Ollama with Llama 3.2 |
+| Testing | JUnit 5, Mockito, MockMvc |
 
 ## Architecture
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   React     │────▶│ Spring Boot │────▶│   Ollama    │
+│  Frontend   │◀────│   Backend   │◀────│ (Llama 3.2) │
+└─────────────┘     └──────┬──────┘     └─────────────┘
+                           │
+                    ┌──────▼──────┐
+                    │ H2 Database │
+                    └─────────────┘
+```
 
-This project consists of two main components:
+### Request Flow
 
-- **Backend**: Spring Boot REST API with Spring AI integration ([backend/](./backend/))
-- **Frontend**: React + TypeScript SPA with Tailwind CSS ([frontend/](./frontend/))
+1. User enters messy notes and selects output format
+2. React frontend sends POST request to Spring Boot API
+3. Backend validates input and calls AiCleaningService
+4. AiCleaningService builds prompt and sends to Ollama
+5. Cleaned text returned to user, saved to database history
 
-For detailed architecture decisions and design documentation, see [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md).
-
-## Technology Stack
-
-### Backend
-- Java 21
-- Spring Boot 3.4.12
-- Spring AI 1.0.0-M4
-- Ollama (local LLM runtime)
-- Spring Data JPA
-- H2 Database (development)
-- Maven
-
-### Frontend
-- React 19.2.0
-- TypeScript
-- Vite (with Rolldown)
-- Tailwind CSS
-- ESLint
-
-## Getting Started
+## Quick Start
 
 ### Prerequisites
 
-- Java 21 or higher
-- Node.js 18 or higher
-- npm
-- Ollama (for AI features)
+- Java 21
+- Node.js 18+
+- Ollama with Llama 3.2 model
 
-### Ollama Setup
+### Installation
 
-The application uses Ollama for AI-powered note cleaning. You'll need to install and configure it:
+1. **Clone the repository**
+```bash
+   git clone https://github.com/YOUR_USERNAME/ai-note-cleaner.git
+   cd ai-note-cleaner
+```
 
-1. **Install Ollama** from [ollama.ai](https://ollama.ai)
-
-2. **Pull the required model**:
-   ```powershell
-   ollama pull llama3.2
-   ```
-
-3. **Start Ollama** (if not running as a service):
-   ```powershell
+2. **Start Ollama**
+```bash
    ollama serve
-   ```
+   ollama pull llama3.2
+```
 
-4. **Verify Ollama is running**:
-   ```powershell
-   Invoke-RestMethod -Uri "http://localhost:11434"
-   # Should return: "Ollama is running"
-   ```
-
-### Running the Full Stack
-
-You need **three terminals** running simultaneously:
-
-#### Terminal 1: Ollama (if not running as a service)
+3. **Start the backend** (Terminal 1)
+```bash
+   cd backend
+   ./mvnw spring-boot:run
+```
+   
+   PowerShell:
 ```powershell
-ollama serve
+   cd backend
+   .\mvnw spring-boot:run
 ```
 
-#### Terminal 2: Backend
-```powershell
-cd backend
-.\mvnw spring-boot:run
-```
-The backend will start on `http://localhost:8080`
-
-#### Terminal 3: Frontend
-```powershell
-cd frontend
-npm install    # Only needed first time
-npm run dev
-```
-The frontend will start on `http://localhost:5173`
-
-### Using the Application
-
-1. Open your browser to `http://localhost:5173`
-2. Enter your messy notes in the text area
-3. Select your preferred output format (bullets, paragraphs, or numbered)
-4. Click "Clean My Notes"
-5. View the AI-cleaned result and click "Copy" to copy to clipboard
-
-## Development
-
-### Backend Development
-
-```powershell
-cd backend
-
-# Start the application
-.\mvnw spring-boot:run
-
-# Run tests
-.\mvnw test
-
-# Build the application
-.\mvnw clean package
+4. **Start the frontend** (Terminal 2)
+```bash
+   cd frontend
+   npm install
+   npm run dev
 ```
 
-### Frontend Development
+5. **Open** http://localhost:5173
 
-```powershell
-cd frontend
+## API Endpoints
 
-# Install dependencies
-npm install
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/notes/clean` | Clean and format notes |
+| GET | `/api/notes/history` | Get last 50 transformations |
 
-# Start development server with hot reload
-npm run dev
-
-# Build for production
-npm run build
-
-# Run linter
-npm run lint
-
-# Preview production build
-npm run preview
+### Example Request
+```bash
+curl -X POST http://localhost:8080/api/notes/clean \
+  -H "Content-Type: application/json" \
+  -d '{"content": "messy notes here", "outputFormat": "bullets"}'
 ```
 
-### Testing the API Directly
-
-```powershell
-# Test the clean endpoint
-Invoke-RestMethod -Uri "http://localhost:8080/api/notes/clean" `
-  -Method POST `
-  -ContentType "application/json" `
-  -Body '{"content": "messy notes here", "outputFormat": "bullets"}'
-```
-
-## Project Structure
-
-```
-ai-note-cleaner/
-├── backend/                          # Spring Boot backend
-│   ├── src/main/java/com/ainote/backend/
-│   │   ├── BackendApplication.java   # Entry point
-│   │   ├── controller/
-│   │   │   └── NoteController.java   # REST endpoint
-│   │   ├── service/
-│   │   │   ├── NoteService.java      # Business logic
-│   │   │   └── AiCleaningService.java # AI integration
-│   │   ├── dto/
-│   │   │   ├── CleanRequest.java     # Request DTO
-│   │   │   ├── CleanResponse.java    # Response DTO
-│   │   │   └── ErrorResponse.java    # Error DTO
-│   │   └── exception/
-│   │       ├── AiServiceException.java
-│   │       └── GlobalExceptionHandler.java
-│   ├── src/main/resources/
-│   │   └── application.properties    # Configuration
-│   ├── src/test/java/                # Tests
-│   ├── pom.xml                       # Maven config
-│   └── mvnw, mvnw.cmd               # Maven wrapper
-│
-├── frontend/                         # React frontend
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── NoteInput.tsx         # Text input with char count
-│   │   │   ├── FormatSelector.tsx    # Output format selector
-│   │   │   ├── NoteOutput.tsx        # Result display + copy
-│   │   │   ├── LoadingSpinner.tsx    # Loading indicator
-│   │   │   └── ErrorMessage.tsx      # Error display
-│   │   ├── services/
-│   │   │   └── api.ts                # API client
-│   │   ├── types/
-│   │   │   └── index.ts              # TypeScript interfaces
-│   │   ├── App.tsx                   # Main component
-│   │   ├── main.tsx                  # Entry point
-│   │   └── index.css                 # Tailwind imports
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── vite.config.ts
-│
-├── docs/                             # Documentation
-│   ├── ARCHITECTURE.md               # Design decisions (ADRs)
-│   ├── DEV_LOG.md                    # Development journal
-│   └── INSTRUCTIONS - Phase X.md    # Phase instructions
-│
-├── .gitignore
-└── README.md                         # This file
-```
-
-## API Reference
-
-### POST /api/notes/clean
-
-Clean and format note content using AI.
-
-**Request:**
+### Example Response
 ```json
 {
-  "content": "messy notes here with typos and bad formatting",
-  "outputFormat": "bullets"
-}
-```
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| content | string | Yes | The note text to clean (max 10,000 chars) |
-| outputFormat | string | Yes | One of: `bullets`, `paragraphs`, `numbered` |
-
-**Success Response (200):**
-```json
-{
-  "original": "messy notes here...",
-  "cleaned": "• Clean point one\n• Clean point two",
+  "original": "messy notes here",
+  "cleaned": "• Messy notes here",
   "outputFormat": "bullets",
-  "timestamp": "2024-12-24T14:30:00.000"
+  "timestamp": "2024-12-27T14:30:00.000"
 }
 ```
 
-**Error Responses:**
+### Error Responses
 
-| Status | Meaning | Example |
-|--------|---------|---------|
-| 400 | Validation failed | Empty content, invalid format |
+| Status | Meaning | Cause |
+|--------|---------|-------|
+| 400 | Validation failed | Empty content, invalid format, exceeds 10,000 chars |
 | 503 | AI service unavailable | Ollama not running |
 | 504 | AI request timeout | Model took too long |
-| 500 | Server error | Unexpected failure |
+
+## Project Structure
+```
+ai-note-cleaner/
+├── backend/                      # Spring Boot API
+│   ├── src/main/java/com/ainote/backend/
+│   │   ├── controller/           # REST endpoints
+│   │   │   └── NoteController.java
+│   │   ├── service/              # Business logic
+│   │   │   ├── NoteService.java
+│   │   │   └── AiCleaningService.java
+│   │   ├── dto/                  # Data transfer objects
+│   │   │   ├── CleanRequest.java
+│   │   │   ├── CleanResponse.java
+│   │   │   ├── NoteHistoryResponse.java
+│   │   │   └── ErrorResponse.java
+│   │   ├── model/                # JPA entities
+│   │   │   └── NoteHistory.java
+│   │   ├── repository/           # Data access
+│   │   │   └── NoteHistoryRepository.java
+│   │   └── exception/            # Error handling
+│   │       ├── AiServiceException.java
+│   │       └── GlobalExceptionHandler.java
+│   └── src/test/java/            # 28 unit & integration tests
+│
+├── frontend/                     # React application
+│   ├── src/
+│   │   ├── components/           # UI components
+│   │   │   ├── NoteInput.tsx
+│   │   │   ├── NoteOutput.tsx
+│   │   │   ├── FormatSelector.tsx
+│   │   │   ├── NoteHistory.tsx
+│   │   │   ├── HistoryItem.tsx
+│   │   │   ├── LoadingSpinner.tsx
+│   │   │   └── ErrorMessage.tsx
+│   │   ├── services/api.ts       # API client
+│   │   ├── types/index.ts        # TypeScript interfaces
+│   │   └── App.tsx               # Main component
+│   └── public/
+│       └── note-icon.svg         # Favicon
+│
+└── docs/                         # Documentation
+    ├── ARCHITECTURE.md           # Design decisions (ADRs)
+    ├── DEV_LOG.md                # Development journal
+    └── INSTRUCTIONS - Phase X.md # Phase specifications
+```
+
+## Development Approach
+
+This project was built using an **AI-native engineering workflow**:
+
+| Phase | Focus | Outcome |
+|-------|-------|---------|
+| 1 | Backend API Foundation | REST endpoint with validation, placeholder logic |
+| 2 | AI Integration | Spring AI + Ollama, prompt engineering |
+| 3 | React Frontend | 8 components, full user workflow |
+| 4 | Database Persistence | H2 database, note history feature |
+
+### Key Practices
+
+- **Phase-based development** - Each phase builds on the previous, ends with working feature
+- **Architecture Decision Records** - All major choices documented with reasoning
+- **Test coverage** - 28 tests covering service and controller layers
+- **Comprehensive documentation** - DEV_LOG tracks learnings and interview prep
+
+See [DEV_LOG.md](docs/DEV_LOG.md) for detailed session notes and learnings.
+
+## Key Learnings
+
+- Spring AI integration with local LLMs via Ollama
+- Layered architecture with proper separation of concerns
+- `@WebMvcTest` vs `@SpringBootTest` for different testing scenarios
+- TypeScript/React controlled component patterns
+- JPA entity design and Spring Data query methods
+- CORS configuration for local development
+- Prompt engineering for consistent AI outputs
+
+## Testing
+```bash
+# Run all backend tests
+cd backend
+./mvnw test
+
+# Run with coverage
+./mvnw test jacoco:report
+```
+
+| Test Type | Count | Purpose |
+|-----------|-------|---------|
+| Unit (NoteServiceTest) | 11 | Service logic with mocked dependencies |
+| Integration (NoteControllerTest) | 9 | HTTP layer, validation, error handling |
 
 ## Troubleshooting
 
-### "AI service is unavailable"
-- Make sure Ollama is running: `ollama serve`
-- Verify the model is installed: `ollama list` should show `llama3.2`
+### "AI service is unavailable" (503)
+```bash
+# Make sure Ollama is running
+ollama serve
 
-### CORS errors in browser console
-- Make sure you're accessing the frontend at `http://localhost:5173`
-- The backend is configured to allow requests from this origin
-
-### TypeScript errors in frontend
-- Run `npm install` to ensure all dependencies are installed
-- Check that you're using Node.js 18+
+# Verify model is installed
+ollama list  # Should show llama3.2
+```
 
 ### Backend won't start
-- Ensure Java 21 is installed: `java -version`
-- Check that port 8080 is not in use
+```bash
+# Check Java version (must be 21)
+java -version
 
-## Contributing
+# Clean and rebuild
+./mvnw clean spring-boot:run
+```
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+### CORS errors
+- Access frontend at `http://localhost:5173` (not 127.0.0.1)
+- Backend configured to allow this origin only
+
+### TypeScript errors
+```bash
+cd frontend
+rm -rf node_modules
+npm install
+```
+
+## Future Enhancements
+
+- [ ] User authentication
+- [ ] Cloud deployment with Groq API
+- [ ] Note search and filtering
+- [ ] Export to markdown/PDF
+- [ ] Dark mode
+- [ ] Multiple AI model support
+
+## Author
+
+**Thomas Claiborne III**
+
+*Built as a portfolio project demonstrating full-stack development with AI integration.*
 
 ## License
 
