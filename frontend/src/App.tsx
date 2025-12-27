@@ -6,6 +6,7 @@ import ErrorMessage from './components/ErrorMessage';
 import FormatSelector from './components/FormatSelector';
 import NoteInput from './components/NoteInput';
 import NoteOutput from './components/NoteOutput';
+import NoteHistory from './components/NoteHistory';
 
 interface AppError {
   message: string;
@@ -18,6 +19,7 @@ function App() {
   const [result, setResult] = useState<CleanResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<AppError | null>(null);
+  const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
 
   const handleSubmit = async () => {
     setIsLoading(true);
@@ -27,11 +29,13 @@ function App() {
     try {
       const response = await cleanNote({ content, outputFormat });
       setResult(response);
+      // Trigger history refresh after successful clean
+      setHistoryRefreshTrigger(prev => prev + 1);
     } catch (err) {
       if (err instanceof ApiError) {
         setError({
           message: err.message,
-          details: err.details.details ?? undefined,
+          details: err.details?.details ?? undefined,
         });
       } else {
         setError({ message: 'An unexpected error occurred' });
@@ -89,6 +93,8 @@ function App() {
             format={result.outputFormat}
           />
         )}
+
+        <NoteHistory refreshTrigger={historyRefreshTrigger} />
       </div>
     </div>
   );
