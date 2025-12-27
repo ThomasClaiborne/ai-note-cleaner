@@ -94,7 +94,11 @@ function App() {
           />
         )}
 
-        <NoteHistory refreshTrigger={historyRefreshTrigger} />
+<NoteHistory refreshTrigger={historyRefreshTrigger} />
+
+        <footer className="mt-12 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
+          Created by Thomas Claiborne III
+        </footer>
       </div>
     </div>
   );
