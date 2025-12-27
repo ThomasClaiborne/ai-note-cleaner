@@ -3,6 +3,8 @@ package com.ainote.backend.service;
 import com.ainote.backend.dto.CleanRequest;
 import com.ainote.backend.dto.CleanResponse;
 import com.ainote.backend.exception.AiServiceException;
+import com.ainote.backend.repository.NoteHistoryRepository;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,11 +25,14 @@ class NoteServiceTest {
     @Mock
     private AiCleaningService aiCleaningService;
 
+    @Mock
+    private NoteHistoryRepository noteHistoryRepository;  // ADD THIS
+
     private NoteService noteService;
 
     @BeforeEach
     void setUp() {
-        noteService = new NoteService(aiCleaningService);
+        noteService = new NoteService(aiCleaningService, noteHistoryRepository);  // ADD SECOND ARG
     }
 
     @Test

@@ -1,14 +1,19 @@
 package com.ainote.backend.controller;
 
+import com.ainote.backend.dto.CleanResponse;
 import com.ainote.backend.service.NoteService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -17,15 +22,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Tests HTTP layer including validation and error handling.
  */
 @WebMvcTest(NoteController.class)
-@Import(NoteService.class)
 class NoteControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
+    @MockitoBean
+    private NoteService noteService;
+
     @Test
     @DisplayName("POST /api/notes/clean with valid request returns 200 OK")
     void cleanNote_validRequest_returns200() throws Exception {
+        when(noteService.cleanNote(any())).thenReturn(
+                new CleanResponse("my messy notes", "[BULLETS] my messy notes", "bullets", LocalDateTime.now())
+        );
+
         String requestBody = """
                 {
                     "content": "my messy notes",
@@ -142,6 +153,10 @@ class NoteControllerTest {
     @Test
     @DisplayName("POST /api/notes/clean with paragraphs format returns correct response")
     void cleanNote_paragraphsFormat_returns200() throws Exception {
+        when(noteService.cleanNote(any())).thenReturn(
+                new CleanResponse("test content", "[PARAGRAPHS] test content", "paragraphs", LocalDateTime.now())
+        );
+
         String requestBody = """
                 {
                     "content": "test content",
@@ -160,6 +175,10 @@ class NoteControllerTest {
     @Test
     @DisplayName("POST /api/notes/clean with numbered format returns correct response")
     void cleanNote_numberedFormat_returns200() throws Exception {
+        when(noteService.cleanNote(any())).thenReturn(
+                new CleanResponse("test content", "[NUMBERED] test content", "numbered", LocalDateTime.now())
+        );
+
         String requestBody = """
                 {
                     "content": "test content",

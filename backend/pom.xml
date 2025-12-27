@@ -73,6 +73,20 @@
 			<scope>test</scope>
 		</dependency>
 
+		<!-- Mockito Java 25 support - override versions -->
+		<dependency>
+			<groupId>net.bytebuddy</groupId>
+			<artifactId>byte-buddy</artifactId>
+			<version>1.17.5</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>net.bytebuddy</groupId>
+			<artifactId>byte-buddy-agent</artifactId>
+			<version>1.17.5</version>
+			<scope>test</scope>
+		</dependency>
+
 		<!-- Spring AI Ollama -->
 		<dependency>
 			<groupId>org.springframework.ai</groupId>

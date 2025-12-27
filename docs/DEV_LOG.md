@@ -411,4 +411,73 @@ Build this list as you develop - specific examples for behavioral interviews:
 
 ---
 
+### 2024-12-27 - Phase 4: Test Fixes After Adding NoteHistoryRepository
+
+**Duration:** ~1 hour  
+**Phase:** 4 - Database Persistence (test fixes)
+
+**Problem Encountered:**
+After adding `NoteHistoryRepository` to `NoteService` constructor in Phase 4, all 20 tests started failing with two different errors:
+
+1. **NoteServiceTest (11 tests):** `Constructor undefined` error
+   - Test was calling `new NoteService(aiCleaningService)` with only 1 argument
+   - But `NoteService` now requires 2 arguments: `AiCleaningService` AND `NoteHistoryRepository`
+
+2. **NoteControllerTest (9 tests):** `No qualifying bean of type 'AiCleaningService'` error
+   - Test used `@Import(NoteService.class)` which tried to create a real `NoteService` bean
+   - `@WebMvcTest` only loads web layer - it couldn't autowire `AiCleaningService` or `NoteHistoryRepository`
+
+**Root Cause:**
+When you add a dependency to a class constructor, ALL code that instantiates that class must be updated - including tests. This is actually a feature, not a bug: the compiler forces you to handle the new dependency everywhere.
+
+**Solutions Applied:**
+
+**NoteServiceTest.java:**
+```java
+// Added new mock
+@Mock
+private NoteHistoryRepository noteHistoryRepository;
+
+// Updated constructor call
+@BeforeEach
+void setUp() {
+    noteService = new NoteService(aiCleaningService, noteHistoryRepository);
+}
+```
+
+**NoteControllerTest.java:**
+```java
+// Removed: @Import(NoteService.class)
+// Added: @MockitoBean to mock the entire service
+@MockitoBean
+private NoteService noteService;
+
+// Added mock responses for success tests (200 OK)
+when(noteService.cleanNote(any())).thenReturn(
+    new CleanResponse("content", "cleaned", "bullets", LocalDateTime.now())
+);
+```
+
+**Additional Learning - Spring Boot 3.4 Deprecation:**
+`@MockBean` is deprecated in Spring Boot 3.4+. Use `@MockitoBean` instead:
+- Old: `org.springframework.boot.test.mock.mockito.MockBean`
+- New: `org.springframework.test.context.bean.override.mockito.MockitoBean`
+
+**Key Learnings:**
+
+| Concept | Explanation |
+|---------|-------------|
+| `@WebMvcTest` scope | Only loads web layer (controllers, filters). Cannot autowire services or repositories. |
+| `@Import` vs `@MockitoBean` | `@Import` creates real bean (needs all dependencies). `@MockitoBean` creates mock (no dependencies needed). |
+| When to mock service in controller tests | Always mock services in `@WebMvcTest` - you're testing HTTP layer, not business logic. |
+| Validation tests don't need mocks | Validation happens BEFORE controller method runs, so service is never called. |
+
+**Interview Angle:**
+"When I added a repository dependency to my service layer, my tests broke. This taught me that `@WebMvcTest` only loads the web slice - it can't autowire service dependencies. The fix was switching from `@Import` to `@MockitoBean`, which creates a mock without needing real dependencies. This is actually the correct pattern: controller tests should mock services because you're testing HTTP behavior, not business logic."
+
+**Tests After Fix:**
+- NoteServiceTest: 11 passed ✓
+- NoteControllerTest: 9 passed ✓
+- Total: 20 tests, 0 failures
+
 *This log is for YOU. Be honest about struggles - that's where learning happens.*
