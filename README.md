@@ -25,14 +25,14 @@ A full-stack web application that transforms messy notes into clean, organized t
 
 ## Architecture
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+┌─────────────┐      ┌─────────────┐     ┌─────────────┐
 │   React     │────▶│ Spring Boot │────▶│   Ollama    │
 │  Frontend   │◀────│   Backend   │◀────│ (Llama 3.2) │
-└─────────────┘     └──────┬──────┘     └─────────────┘
-                           │
-                    ┌──────▼──────┐
-                    │ H2 Database │
-                    └─────────────┘
+└─────────────┘      └──────┬──────┘     └─────────────┘
+                            │
+                     ┌──────▼──────┐
+                     │ H2 Database │
+                     └─────────────┘
 ```
 
 ### Request Flow
